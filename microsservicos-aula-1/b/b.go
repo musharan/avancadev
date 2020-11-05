@@ -14,15 +14,21 @@ type Result struct {
 }
 
 func main() {
+
 	http.HandleFunc("/", home)
 	http.ListenAndServe(":9091", nil)
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
+	log.Println(r.FormValue("coupon"))
+	log.Println(r.FormValue("ccNumber"))
+	log.Println(r.FormValue("ccCvv"))
+
 	coupon := r.PostFormValue("coupon")
 	ccNumber := r.PostFormValue("ccNumber")
+	ccCvv := r.PostFormValue("ccCvv")
 
-	resultCoupon := makeHttpCall("http://localhost:9092", coupon)
+	resultCoupon := makeHttpCall("http://localhost:9092", coupon, ccCvv)
 
 	result := Result{Status: "declined"}
 
@@ -34,6 +40,10 @@ func home(w http.ResponseWriter, r *http.Request) {
 		result.Status = "invalid coupon"
 	}
 
+	if resultCoupon.Status == "cvvError" {
+		result.Status = "invalid cvv"
+	}
+
 	jsonData, err := json.Marshal(result)
 	if err != nil {
 		log.Fatal("Error processing json")
@@ -42,11 +52,11 @@ func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, string(jsonData))
 }
 
-
-func makeHttpCall(urlMicroservice string, coupon string) Result {
+func makeHttpCall(urlMicroservice string, coupon string, ccCvv string) Result {
 
 	values := url.Values{}
 	values.Add("coupon", coupon)
+	values.Add("ccCvv", ccCvv)
 
 	res, err := http.PostForm(urlMicroservice, values)
 	if err != nil {

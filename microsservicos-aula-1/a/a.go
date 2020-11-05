@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/hashicorp/go-retryablehttp"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 type Result struct {
@@ -26,18 +27,22 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func process(w http.ResponseWriter, r *http.Request) {
+	log.Println(r.FormValue("coupon"))
+	log.Println(r.FormValue("cc-number"))
+	log.Println(r.FormValue("cc-cvv"))
 
-	result := makeHttpCall("http://localhost:9091", r.FormValue("coupon"), r.FormValue("cc-number"))
+	result := makeHttpCall("http://localhost:9091", r.FormValue("coupon"), r.FormValue("cc-number"), r.FormValue("cc-cvv"))
 
 	t := template.Must(template.ParseFiles("templates/home.html"))
 	t.Execute(w, result)
 }
 
-func makeHttpCall(urlMicroservice string, coupon string, ccNumber string) Result {
+func makeHttpCall(urlMicroservice string, coupon string, ccNumber string, ccCvv string) Result {
 
 	values := url.Values{}
 	values.Add("coupon", coupon)
 	values.Add("ccNumber", ccNumber)
+	values.Add("ccCvv", ccCvv)
 
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 5
